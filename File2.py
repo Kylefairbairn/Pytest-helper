@@ -165,6 +165,21 @@ class TsharkCapture:
         os.replace(temporary, target)
         return target
 
+    def verify_rtp(self, *, udp_port: int | None = None, display_filter: str | None = None):
+        """Verify the completed working capture using tshark's RTP dissector."""
+        if self.is_running:
+            raise CaptureError("stop the capture before verifying it")
+        if self._result is None:
+            raise CaptureNotRunning("no completed capture is available")
+        from .verify import verify_rtp
+
+        return verify_rtp(
+            self._result.working_file,
+            udp_port=udp_port,
+            display_filter=display_filter,
+            tshark_path=self.config.tshark_path,
+        )
+
     def __enter__(self) -> "TsharkCapture":
         self.start()
         return self
@@ -177,4 +192,3 @@ class TsharkCapture:
         if self._stderr_file is not None:
             self._stderr_file.close()
             self._stderr_file = None
-
