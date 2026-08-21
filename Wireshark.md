@@ -4,6 +4,24 @@ A small dependency-free Python wrapper around the `tshark` executable already
 installed on the test-controller VM. Python does not need PyShark or native
 packet bindings.
 
+## dir structure 
+
+‘’’
+wireshark-test-tool/
+├── pyproject.toml
+├── README.md
+├── src/
+│   └── traffic_capture/
+│       ├── __init__.py       ← put that code here
+│       ├── capture.py
+│       ├── errors.py
+│       ├── profiles.py
+│       └── pytest_plugin.py
+└── tests/
+    └── test_profiles.py
+‘’’
+
+
 ## Can the controller VM see everyone's traffic?
 
 Not automatically. A NIC normally sees broadcasts/multicasts delivered to its
