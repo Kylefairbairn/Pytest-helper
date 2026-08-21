@@ -83,6 +83,82 @@ packets are discarded before they reach disk. RTP itself has no universal port,
 so the safe default for the `multicast_rtp` profile is multicast UDP. A known
 RTP port range makes it much tighter.
 
+
+
+```
+# Capturing and Verifying RTP Traffic
+
+```python
+from pathlib import Path
+
+from traffic_capture import (
+    CaptureConfig,
+    CaptureProfile,
+    TsharkCapture,
+)
+
+
+def test_multicast_rtp():
+    capture = TsharkCapture(
+        CaptureConfig(
+            interface="ens224",
+            profile=CaptureProfile.MULTICAST_RTP,
+            rtp_port_range=(5004, 5999),
+        )
+    )
+
+    # Start capturing packets.
+    capture.start()
+
+    try:
+        # Run the action that should generate RTP traffic here.
+        # Example:
+        # product.start_rtp_stream()
+        pass
+    finally:
+        # Always stop tshark cleanly.
+        capture.stop()
+
+    # Save the completed capture.
+    pcap_path = capture.save_pcap(
+        Path("artifacts/pcaps/REQ-1234.pcapng")
+    )
+
+    # Force UDP port 5004 to be decoded as RTP and verify RTP was found.
+    result = capture.verify_rtp(
+        udp_port=5004,
+        display_filter="ip.dst == 239.1.1.1",
+    )
+
+    assert result.is_rtp, f"No RTP packets found in {pcap_path}"
+    assert result.packet_count > 0
+
+    # Optional packet-level checks.
+    first_packet = result.packets[0]
+
+    assert first_packet.destination_ip == "239.1.1.1"
+    assert first_packet.destination_port == 5004
+
+    print(f"Saved capture: {pcap_path}")
+    print(f"RTP packets found: {result.packet_count}")
+    print(f"SSRC: {first_packet.ssrc}")
+    print(f"Payload type: {first_packet.payload_type}")
+```
+
+Run the test from the project directory:
+
+```bash
+python3 -m pip install -e .
+pytest -v tests/test_multicast_rtp.py
+```
+
+Replace:
+
+- `ens224` with the controller VM’s capture interface.
+- `5004` with the actual RTP UDP port.
+- `239.1.1.1` with the expected multicast destination.
+- The `pass` statement with the action that starts the RTP stream.
+```
 ## pytest integration
 
 Register the included plugin in the test suite's `conftest.py`:
